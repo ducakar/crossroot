@@ -1,5 +1,5 @@
 . config.sh
-. inc/common.sh
+. etc/common.sh
 
 function fetch() {
   msg 'Fetching'
@@ -142,7 +142,6 @@ case ${1} in
     ;;
   *)
     rm -rf ${crossDir}
-    clean
     binutils
     gcc
     libgcc1
