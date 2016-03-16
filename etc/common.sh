@@ -6,6 +6,7 @@ buildDir=${rootDir}/build
 crossDir=${rootDir}/cross
 crossPrefix=${crossDir}/bin/${TARGET}-
 targetDir=${rootDir}/target
+imagesDir=${rootDir}/images
 
 function msg() {
   echo -e "\e[1;32m=== ${@} ===\e[0m"

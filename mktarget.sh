@@ -24,13 +24,17 @@ function filesystem() {
   mkdir -p ${targetDir}/usr/{bin,lib,share}
   mkdir -p ${targetDir}/var/lib
 
-  chmod 0700 ${targetDir}/root
+  chmod 0750 ${targetDir}/root
   chmod 1777 ${targetDir}/tmp
 
+  ln -sf usr/bin ${targetDir}/bin
   ln -sf usr/lib ${targetDir}/lib
   ln -sf ../tmp ${targetDir}/var/cache
   ln -sf ../tmp ${targetDir}/var/log
   ln -sf ../tmp ${targetDir}/var/tmp
+
+  #mknod -m 0600 ${targetDir}/dev/console c 5 1
+  #mknod -m 0666 ${targetDir}/dev/null c 1 3
 }
 
 function musl() {

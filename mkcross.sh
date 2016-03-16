@@ -142,6 +142,7 @@ case ${1} in
     ;;
   *)
     rm -rf ${crossDir}
+    kernelHeaders
     binutils
     gcc
     libgcc1
