@@ -32,35 +32,22 @@ function filesystem() {
   ln -sf ../tmp ${targetDir}/var/cache
   ln -sf ../tmp ${targetDir}/var/log
   ln -sf ../tmp ${targetDir}/var/tmp
-
-  #mknod -m 0600 ${targetDir}/dev/console c 5 1
-  #mknod -m 0666 ${targetDir}/dev/null c 1 3
 }
 
 function musl() {
-  prepare musl-${MUSL_VER} BUILD
-
-  msg 'Configuring musl'
-  CROSS_COMPILE=${crossPrefix} \
-    ../configure --host=${TARGET} --prefix=/usr --disable-static || exit 1
-
-  msg 'Compiling musl'
-  make -j4 || exit 1
-
-  msg 'Installing musl'
-  make install DESTDIR=${targetDir} || exit 1
-
-  rm -rf ${targetDir}/usr/include
-  rm -rf ${targetDir}/usr/lib/ld-*.so*
-  rm -rf ${targetDir}/usr/lib/lib*.a
-  rm -rf ${targetDir}/usr/lib/*.o
-
-  ln -sf libc.so ${targetDir}/usr/lib/ld-linux.so.3
+  msg 'Copying musl from toolchain'
+  install -m 755 ${crossDir}/${TARGET}/lib/libc.so ${targetDir}/usr/lib/libc.so
+  ln -s usr/lib/libc.so ${targetDir}/lib/ld-linux.so.3
 }
 
 function libgcc() {
   msg 'Copying libgcc from toolchain'
-  install -m 755 ${crossDir}/${TARGET}/lib/libgcc_s.so.1 ${targetDir}/usr/lib
+  install -m 755 ${crossDir}/${TARGET}/lib/libgcc_s.so.1 ${targetDir}/usr/lib/libgcc_s.so.1
+}
+
+function zlib() {
+  msg 'Copying zlib  from toolchain'
+  install -m 755 ${crossDir}/${TARGET}/lib/libz.so.1 ${targetDir}/usr/lib/libz.so.1
 }
 
 function busybox() {
@@ -83,8 +70,6 @@ function busybox() {
   done
 }
 
-sanityCheck
-
 case ${1} in
   fetch)
     fetch
@@ -104,14 +89,18 @@ case ${1} in
   libgcc)
     libgcc
     ;;
+  zlib)
+    zlib
+    ;;
   busybox)
     busybox
     ;;
-  *)
+  all)
     rm -rf ${targetDir}
     filesystem
     musl
     libgcc
+    zlib
     busybox
     trim
     ;;

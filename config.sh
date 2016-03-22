@@ -1,8 +1,10 @@
 TARGET='arm-linux-gnueabi'
+CPU_FLAGS='--with-cpu=arm926ej-s --with-float=soft'
 
 LINUX_VER='3.10.100'
 BINUTILS_VER='2.26'
 ISL_VER='0.15'
 GCC_VER='5.3.0'
 MUSL_VER='1.1.14'
+ZLIB_VER='1.2.8'
 BUSYBOX_VER='1.24.1'

@@ -1,11 +1,14 @@
 . config.sh
 . etc/common.sh
 
-sanityCheck
-
 fakeroot << EOF
-mknod -m 0600 ${targetDir}/dev/console c 5 1
-mknod -m 0666 ${targetDir}/dev/null c 1 3
+mkdir -p ${imagesDir} && cd ${targetDir}
 
-mkyaffs2 ${targetDir} ${imagesDir}/rootfs.yaffs2
+mknod -m 0600 dev/console c 5 1
+mknod -m 0666 dev/null c 1 3
+
+chmod 4755 usr/bin/busybox
+
+#mkyaffs2 . ${imagesDir}/rootfs.yaffs2
+tar cf ${imagesDir}/rootfs.tar *
 EOF

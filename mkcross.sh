@@ -8,12 +8,14 @@ function fetch() {
   fetchPkg "ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
   fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.bz2"
   fetchPkg "http://www.musl-libc.org/releases/musl-${MUSL_VER}.tar.gz"
+  fetchPkg "http://zlib.net/zlib-${ZLIB_VER}.tar.xz"
   msg 'Fetched everything'
 }
 
 function trim() {
-  msg 'Removing cross/share'
+  msg 'Removing cross/[target]/share'
   rm -rf ${crossDir}/share
+  rm -rf ${crossDir}/${TARGET}/share
 
   msg 'Stripping host binaries'
   strip ${crossDir}/bin/*
@@ -56,7 +58,7 @@ function gcc() {
   msg 'Configuring toolchain GCC'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c --disable-static || exit 1
+		 --enable-languages=c --disable-static ${CPU_FLAGS} || exit 1
 
   msg 'Compiling toolchain GCC'
   make -j4 all-gcc || exit 1
@@ -75,7 +77,7 @@ function libgcc1() {
   msg 'Configuring toolchain bootstrap libgcc'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c --disable-shared --disable-threads || exit 1
+		 --enable-languages=c --disable-shared --disable-threads ${CPU_FLAGS} || exit 1
 
   msg 'Compiling toolchain bootstrap libgcc'
   make -j4 all-target-libgcc || exit 1
@@ -89,7 +91,7 @@ function musl() {
 
   msg 'Configuring toolchain musl'
   CROSS_COMPILE=${crossPrefix} \
-    ../configure --target=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static
+    ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static
 
   msg 'Compiling toolchain musl'
   make -j4 || exit 1
@@ -110,7 +112,19 @@ function libgcc() {
   rm -rf ${crossDir}/lib/gcc/${TARGET}/${GCC_VER}/include-fixed
 }
 
-sanityCheck
+function zlib() {
+  prepare zlib-${ZLIB_VER}
+
+  msg 'Configuring zlib'
+  CC=${crossPrefix}gcc \
+    ./configure --prefix=${crossDir}/${TARGET}
+
+  msg 'Compiling zlib'
+  make -j4 || exit
+
+  msg 'Installing zlib'
+  make install || exit 1
+}
 
 case ${1} in
   fetch)
@@ -140,7 +154,10 @@ case ${1} in
   libgcc)
     libgcc
     ;;
-  *)
+  zlib)
+    zlib
+    ;;
+  all)
     rm -rf ${crossDir}
     kernelHeaders
     binutils
@@ -148,6 +165,7 @@ case ${1} in
     libgcc1
     musl
     libgcc
+    libz
     trim
     ;;
 esac
