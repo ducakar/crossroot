@@ -19,11 +19,9 @@ function trim() {
 
   msg 'Stripping host binaries'
   strip ${crossDir}/bin/*
-  strip ${crossDir}/libexec/gcc/${TARGET}/${GCC_VER}/*
-  strip ${crossDir}/libexec/gcc/${TARGET}/${GCC_VER}/plugin/*
+  strip ${crossDir}/${TARGET}/bin/*
 
   msg 'Stripping target binaries'
-  strip ${crossDir}/${TARGET}/bin/*
   ${crossPrefix}strip ${crossDir}/${TARGET}/lib/*.so*
 }
 
@@ -58,13 +56,13 @@ function gcc() {
   msg 'Configuring toolchain GCC'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c --disable-static ${CPU_FLAGS} || exit 1
+                 --enable-languages=c ${CPU_FLAGS} --disable-static || exit 1
 
   msg 'Compiling toolchain GCC'
   make -j4 all-gcc || exit 1
 
   msg 'Installing toolchain GCC'
-  make install-gcc || exit 1
+  make install-strip-gcc || exit 1
 }
 
 # We have a poblem here; libgcc depends on libc, but libc also needs libgcc since GCC generates code
@@ -75,15 +73,15 @@ function libgcc1() {
   prepare gcc-${GCC_VER} BUILD-cross-libgcc1
 
   msg 'Configuring toolchain bootstrap libgcc'
-  CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
+  CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' CFLAGS='-O0' CXXFLAGS='-O0' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c --disable-shared --disable-threads ${CPU_FLAGS} || exit 1
+                 --enable-languages=c ${CPU_FLAGS} --disable-shared --disable-threads || exit 1
 
   msg 'Compiling toolchain bootstrap libgcc'
   make -j4 all-target-libgcc || exit 1
 
   msg 'Installing toolchain bootstrap libgcc'
-  make install-target-libgcc || exit 1
+  make install-strip-target-libgcc || exit 1
 }
 
 function musl() {
@@ -107,7 +105,7 @@ function libgcc() {
   make -j4 all-target-libgcc || exit 1
 
   msg 'Installing toolchain libgcc'
-  make install-target-libgcc || exit 1
+  make install-strip-target-libgcc || exit 1
 
   rm -rf ${crossDir}/lib/gcc/${TARGET}/${GCC_VER}/include-fixed
 }
@@ -165,7 +163,7 @@ case ${1} in
     libgcc1
     musl
     libgcc
-    libz
+    zlib
     trim
     ;;
 esac

@@ -1,4 +1,4 @@
-TARGET='arm-linux-gnueabi'
+TARGET='arm-linux-musleabi'
 CPU_FLAGS='--with-cpu=arm926ej-s --with-float=soft'
 
 LINUX_VER='3.10.100'

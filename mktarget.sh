@@ -18,26 +18,13 @@ function trim() {
 }
 
 function filesystem() {
-  msg 'Creating filesystem'
-
-  mkdir -p ${targetDir}/{dev,etc,proc,root,run,sys,tmp,usr,var}
-  mkdir -p ${targetDir}/usr/{bin,lib,share}
-  mkdir -p ${targetDir}/var/lib
-
-  chmod 0750 ${targetDir}/root
-  chmod 1777 ${targetDir}/tmp
-
-  ln -sf usr/bin ${targetDir}/bin
-  ln -sf usr/lib ${targetDir}/lib
-  ln -sf ../tmp ${targetDir}/var/cache
-  ln -sf ../tmp ${targetDir}/var/log
-  ln -sf ../tmp ${targetDir}/var/tmp
+  cp -af etc/root ${targetDir}
 }
 
 function musl() {
   msg 'Copying musl from toolchain'
   install -m 755 ${crossDir}/${TARGET}/lib/libc.so ${targetDir}/usr/lib/libc.so
-  ln -s usr/lib/libc.so ${targetDir}/lib/ld-linux.so.3
+  ln -s libc.so ${targetDir}/usr/lib/ld-linux.so.3
 }
 
 function libgcc() {
