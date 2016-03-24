@@ -1,0 +1,39 @@
+# Maintainer: Davorin Učakar <davorin.ucakar@gmail.com>
+
+_target=arm-mini2451-linux-musleabi
+pkgname=$_target-binutils
+pkgver=2.26
+pkgrel=1
+pkgdesc="A set of programs to assemble and manipulate binary and object files for the $_target target"
+url='http://www.gnu.org/software/binutils/'
+arch=(i686 x86_64)
+license=(GPL)
+depends=(glibc)
+source=(ftp://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.bz2)
+md5sums=(64146a0faa3b411ba774f47d41de239f)
+
+prepare() {
+  mkdir -p binutils-$pkgver/build
+  cd binutils-$pkgver
+
+  sed -i '/ac_cpp=/s/$CPPFLAGS/$CPPFLAGS -O2/' libiberty/configure
+}
+
+build() {
+  cd binutils-$pkgver/build
+
+  ../configure --target=$_target \
+	       --prefix=/usr \
+	       --disable-nls \
+	       --disable-multilib
+
+  make
+}
+
+package() {
+  cd binutils-$pkgver/build
+
+  make install-strip DESTDIR="$pkgdir"
+
+  rm -rf "$pkgdir"/usr/share
+}

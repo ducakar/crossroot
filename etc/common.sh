@@ -1,4 +1,4 @@
-requiredExes=(wget tar gzip bzip2 cmake make gcc ccache)
+requiredExes=(wget tar gzip bzip2 make gcc ccache)
 
 rootDir=`pwd`
 srcDir=${rootDir}/src
