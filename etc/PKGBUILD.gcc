@@ -19,7 +19,7 @@ md5sums=(c9616fd448f980259c31de613e575719
 prepare() {
   mkdir -p gcc-$pkgver/build
 
-  ln -s isl-$_islver gcc-$pkgver/isl
+  ln -s ../isl-$_islver gcc-$pkgver/isl
 }
 
 build() {

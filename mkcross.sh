@@ -6,7 +6,7 @@ function fetch() {
   fetchPkg "https://cdn.kernel.org/pub/linux/kernel/v3.x/linux-${LINUX_VER}.tar.xz"
   fetchPkg "http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VER}.tar.bz2"
   fetchPkg "ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
-  fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.bz2"
+  fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.xz"
   fetchPkg "http://www.musl-libc.org/releases/musl-${MUSL_VER}.tar.gz"
   fetchPkg "http://zlib.net/zlib-${ZLIB_VER}.tar.xz"
   fetchPkg "https://www.openssl.org/source/openssl-${OPENSSL_VER}.tar.gz"
@@ -57,7 +57,7 @@ function gcc() {
   msg 'Configuring toolchain GCC'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-                 --enable-languages=c ${CPU_FLAGS} --disable-static || exit 1
+		 --enable-languages=c --disable-libssp ${CPU_FLAGS} --disable-static || exit 1
 
   msg 'Compiling toolchain GCC'
   make -j4 all-gcc || exit 1
@@ -76,7 +76,8 @@ function libgcc1() {
   msg 'Configuring toolchain bootstrap libgcc'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' CFLAGS='-O0' CXXFLAGS='-O0' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-                 --enable-languages=c ${CPU_FLAGS} --disable-shared --disable-threads || exit 1
+		 --enable-languages=c --disable-libssp ${CPU_FLAGS} --disable-shared \
+		 --disable-threads || exit 1
 
   msg 'Compiling toolchain bootstrap libgcc'
   make -j4 all-target-libgcc || exit 1
