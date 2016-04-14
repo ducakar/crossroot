@@ -9,6 +9,7 @@ function fetch() {
   fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.bz2"
   fetchPkg "http://www.musl-libc.org/releases/musl-${MUSL_VER}.tar.gz"
   fetchPkg "http://zlib.net/zlib-${ZLIB_VER}.tar.xz"
+  fetchPkg "https://www.openssl.org/source/openssl-${OPENSSL_VER}.tar.gz"
   msg 'Fetched everything'
 }
 
@@ -124,6 +125,21 @@ function zlib() {
   make install || exit 1
 }
 
+function openssl() {
+  prepare openssl-${OPENSSL_VER} BUILD
+
+  msg 'Configuring openssl'
+  cd ..
+  ./Configure --prefix=/ linux-generic32 || exit 1
+
+  msg 'Compiling openssl'
+  make depend
+  make -j4 CC=${crossPrefix}gcc AR="${crossPrefix}ar r" RANLIB=${crossPrefix}ranlib || exit 1
+
+  msg 'Installing openssl'
+  make INSTALL_PREFIX=${crossDir}/${TARGET} install || exit 1
+}
+
 case ${1} in
   fetch)
     fetch
@@ -155,6 +171,9 @@ case ${1} in
   zlib)
     zlib
     ;;
+  openssl)
+    openssl
+    ;;
   all)
     rm -rf ${crossDir}
     kernelHeaders
@@ -164,6 +183,7 @@ case ${1} in
     musl
     libgcc
     zlib
+    openssl
     trim
     ;;
 esac

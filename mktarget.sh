@@ -4,6 +4,7 @@
 function fetch() {
   msg 'Fetching'
   fetchPkg "https://busybox.net/downloads/busybox-${BUSYBOX_VER}.tar.bz2"
+  fetchPkg "http://www.obsd.si/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VER}.tar.gz"
   msg 'Fetched everything'
 }
 
@@ -57,6 +58,21 @@ function busybox() {
   done
 }
 
+function openssh() {
+  prepare openssh-${OPENSSH_VER} BUILD
+
+  msg 'Configuring openssh'
+  # It calls "strip" instead of "${TARGET}-strip". Anyway, we strip all binaries aftwrwards.
+  ../configure --host=${TARGET} --prefix=/usr --sysconfdir=/etc --disable-etc-default-login \\
+	       --disable-strip || exit 1
+
+  msg 'Compiling openssh'
+  make -j4 || exit 1
+
+  msg 'Installing openssh'
+  make install-nokeys DESTDIR=${targetDir} || exit 1
+}
+
 case ${1} in
   fetch)
     fetch
@@ -82,6 +98,9 @@ case ${1} in
   busybox)
     busybox
     ;;
+  openssh)
+    openssh
+    ;;
   all)
     rm -rf ${targetDir}
     filesystem
@@ -89,6 +108,7 @@ case ${1} in
     libgcc
     zlib
     busybox
+    openssh
     trim
     ;;
 esac
