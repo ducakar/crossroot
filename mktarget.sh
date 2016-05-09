@@ -34,7 +34,7 @@ function libgcc() {
 }
 
 function zlib() {
-  msg 'Copying zlib  from toolchain'
+  msg 'Copying zlib from toolchain'
   install -m 755 ${crossDir}/${TARGET}/lib/libz.so.1 ${targetDir}/usr/lib/libz.so.1
 }
 
@@ -63,7 +63,7 @@ function openssh() {
 
   msg 'Configuring openssh'
   # It calls "strip" instead of "${TARGET}-strip". Anyway, we strip all binaries aftwrwards.
-  ../configure --host=${TARGET} --prefix=/usr --sysconfdir=/etc --disable-etc-default-login \\
+  ../configure --host=${TARGET} --prefix=/usr --sysconfdir=/etc --disable-etc-default-login \
 	       --disable-strip || exit 1
 
   msg 'Compiling openssh'
