@@ -1,8 +1,8 @@
-/dev/root	/		yaffs2		noatime					0	1
+/dev/sda	/		yaffs2		noatime					0	1
 proc		/proc		proc		relatime,nosuid,nodev,noexec		0	0
+sysfs		/sys		sysfs		relatime,nosuid,nodev,noexec		0	0
 #dev		/dev		devtmpfs	relatime,nosuid,mode=0755		0	0
 devpts		/dev/pts	devpts		relatime,nosuid,noexec,gid=5,mode=620	0	0
 tmpfs		/dev/shm	tmpfs		relatime,nosuid,nodev			0	0
 tmpfs		/tmp		tmpfs		relatime				0	0
 tmpfs		/run		tmpfs		relatime,nosuid,nodev,mode=0755		0	0
-sysfs		/sys		sysfs		relatime,nosuid,nodev,noexec		0	0

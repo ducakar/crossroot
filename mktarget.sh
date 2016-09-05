@@ -25,7 +25,7 @@ function filesystem() {
 function musl() {
   msg 'Copying musl from toolchain'
   install -m 755 ${crossDir}/${TARGET}/lib/libc.so ${targetDir}/usr/lib/libc.so
-  ln -s libc.so ${targetDir}/usr/lib/ld-linux.so.3
+  ln -s libc.so ${targetDir}/usr/lib/ld-musl-arm.so.1
 }
 
 function libgcc() {
@@ -36,6 +36,12 @@ function libgcc() {
 function zlib() {
   msg 'Copying zlib from toolchain'
   install -m 755 ${crossDir}/${TARGET}/lib/libz.so.1 ${targetDir}/usr/lib/libz.so.1
+}
+
+function libressl() {
+  msg 'Copying libressl from toolchain'
+  install -m 755 ${crossDir}/${TARGET}/lib/libcrypto.so.38 ${targetDir}/usr/lib/libcrypto.so.38
+  install -m 755 ${crossDir}/${TARGET}/lib/libssl.so.39 ${targetDir}/usr/lib/libssl.so.39
 }
 
 function busybox() {
@@ -95,6 +101,9 @@ case ${1} in
   zlib)
     zlib
     ;;
+  libressl)
+    libressl
+    ;;
   busybox)
     busybox
     ;;
@@ -107,6 +116,7 @@ case ${1} in
     musl
     libgcc
     zlib
+    libressl
     busybox
     openssh
     trim

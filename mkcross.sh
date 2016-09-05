@@ -3,13 +3,13 @@
 
 function fetch() {
   msg 'Fetching'
-  fetchPkg "https://cdn.kernel.org/pub/linux/kernel/v3.x/linux-${LINUX_VER}.tar.xz"
+  fetchPkg "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-${LINUX_VER}.tar.xz"
   fetchPkg "http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VER}.tar.bz2"
   fetchPkg "ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
   fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.xz"
   fetchPkg "http://www.musl-libc.org/releases/musl-${MUSL_VER}.tar.gz"
   fetchPkg "http://zlib.net/zlib-${ZLIB_VER}.tar.xz"
-  fetchPkg "https://www.openssl.org/source/openssl-${OPENSSL_VER}.tar.gz"
+  fetchPkg "http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VER}.tar.gz"
   msg 'Fetched everything'
 }
 
@@ -38,7 +38,8 @@ function binutils() {
 
   msg 'Configuring toolchain binutils'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
-    ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib || exit 1
+    ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
+		 --disable-werror || exit 1
 
   msg 'Compiling toolchain binutils'
   make -j4 || exit 1
@@ -57,7 +58,7 @@ function gcc() {
   msg 'Configuring toolchain GCC'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c --disable-libssp ${CPU_FLAGS} --disable-static || exit 1
+		 --enable-languages=c,c++ --disable-libssp ${CPU_FLAGS} --disable-static || exit 1
 
   msg 'Compiling toolchain GCC'
   make -j4 all-gcc || exit 1
@@ -69,12 +70,12 @@ function gcc() {
 # We have a poblem here; libgcc depends on libc, but libc also needs libgcc since GCC generates code
 # that call functions from libgcc (e.g. floating-point helper functions). We solve that cyclic
 # dependency issue by first compiling a limited libgcc (static only, without supports for threads).
-# Bootstrap libgcc is used to build libc and afeter that we can build a fully-functional libgcc.
+# That bootstrap libgcc suffices to build our libc and after that the fully-functional libgcc.
 function libgcc1() {
   prepare gcc-${GCC_VER} BUILD-cross-libgcc1
 
   msg 'Configuring toolchain bootstrap libgcc'
-  CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' CFLAGS='-O0' CXXFLAGS='-O0' \
+  CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
 		 --enable-languages=c --disable-libssp ${CPU_FLAGS} --disable-shared \
 		 --disable-threads || exit 1
@@ -91,7 +92,7 @@ function musl() {
 
   msg 'Configuring toolchain musl'
   CROSS_COMPILE=${crossPrefix} \
-    ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static
+    ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static || exit 1
 
   msg 'Compiling toolchain musl'
   make -j4 || exit 1
@@ -126,18 +127,16 @@ function zlib() {
   make install || exit 1
 }
 
-function openssl() {
-  prepare openssl-${OPENSSL_VER} BUILD
+function libressl() {
+  prepare libressl-${LIBRESSL_VER} BUILD
 
-  msg 'Configuring openssl'
-  cd ..
-  ./Configure --prefix=/ linux-generic32 || exit 1
+  msg 'Configuring libressl'
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static || exit 1
 
-  msg 'Compiling openssl'
-  make depend
-  make -j4 CC=${crossPrefix}gcc AR="${crossPrefix}ar r" RANLIB=${crossPrefix}ranlib || exit 1
+  msg 'Compiling libressl'
+  make -j4 || exit 1
 
-  msg 'Installing openssl'
+  msg 'Installing libressl'
   make INSTALL_PREFIX=${crossDir}/${TARGET} install || exit 1
 }
 
@@ -172,8 +171,8 @@ case ${1} in
   zlib)
     zlib
     ;;
-  openssl)
-    openssl
+  libressl)
+    libressl
     ;;
   all)
     rm -rf ${crossDir}
@@ -184,7 +183,7 @@ case ${1} in
     musl
     libgcc
     zlib
-    openssl
+    libressl
     trim
     ;;
 esac

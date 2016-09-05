@@ -1,1 +1,8 @@
 #!/bin/sh
+
+mkdir -p /dev/pts /dev/shm
+mount -a
+
+syslogd
+
+hostname -F /etc/hostname
