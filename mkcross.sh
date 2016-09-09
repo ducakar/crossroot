@@ -5,11 +5,17 @@ function fetch() {
   msg 'Fetching'
   fetchPkg "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-${LINUX_VER}.tar.xz"
   fetchPkg "http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VER}.tar.bz2"
-  fetchPkg "ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
   fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.xz"
+  fetchPkg "ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
   fetchPkg "http://www.musl-libc.org/releases/musl-${MUSL_VER}.tar.gz"
   fetchPkg "http://zlib.net/zlib-${ZLIB_VER}.tar.xz"
   fetchPkg "http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VER}.tar.gz"
+  fetchPkg "http://downloads.sourceforge.net/sourceforge/libpng/libpng-${LIBPNG_VER}.tar.xz"
+  fetchPkg "http://www.ijg.org/files/jpegsrc.v${JPEGLIB_VER}.tar.gz"
+  fetchPkg "http://download.savannah.gnu.org/releases/freetype//freetype-${FREETYPE_VER}.tar.bz2"
+  fetchPkg "https://www.libsdl.org/release/SDL2-${SDL_VER}.tar.gz"
+  fetchPkg "https://www.libsdl.org/projects/SDL_image/release/SDL2_image-${SDL_IMAGE_VER}.tar.gz"
+  fetchPkg "https://www.libsdl.org/projects/SDL_ttf/release/SDL2_ttf-${SDL_TTF_VER}.tar.gz"
   msg 'Fetched everything'
 }
 
@@ -58,7 +64,7 @@ function gcc() {
   msg 'Configuring toolchain GCC'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c,c++ --disable-libssp ${CPU_FLAGS} --disable-static || exit 1
+		 --enable-languages=c,c++ ${CPU_FLAGS} --disable-static || exit 1
 
   msg 'Compiling toolchain GCC'
   make -j4 all-gcc || exit 1
@@ -77,8 +83,7 @@ function libgcc1() {
   msg 'Configuring toolchain bootstrap libgcc'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
-		 --enable-languages=c --disable-libssp ${CPU_FLAGS} --disable-shared \
-		 --disable-threads || exit 1
+		 --enable-languages=c ${CPU_FLAGS} --disable-shared --disable-threads || exit 1
 
   msg 'Compiling toolchain bootstrap libgcc'
   make -j4 all-target-libgcc || exit 1
@@ -104,11 +109,11 @@ function musl() {
 function libgcc() {
   prepare gcc-${GCC_VER} BUILD-cross
 
-  msg 'Compiling toolchain libgcc'
-  make -j4 all-target-libgcc || exit 1
+  msg 'Compiling toolchain libgcc & libstdc++'
+  make -j4 all-target-libgcc all-target-libstdc++-v3 || exit 1
 
-  msg 'Installing toolchain libgcc'
-  make install-strip-target-libgcc || exit 1
+  msg 'Installing toolchain libgcc & libstdc++'
+  make install-strip-target-libgcc install-strip-target-libstdc++-v3 || exit 1
 
   rm -rf ${crossDir}/lib/gcc/${TARGET}/${GCC_VER}/include-fixed
 }
@@ -131,13 +136,100 @@ function libressl() {
   prepare libressl-${LIBRESSL_VER} BUILD
 
   msg 'Configuring libressl'
-  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static || exit 1
+  ../configure --host=${TARGET} --prefix=/ --disable-static || exit 1
 
   msg 'Compiling libressl'
   make -j4 || exit 1
 
   msg 'Installing libressl'
-  make INSTALL_PREFIX=${crossDir}/${TARGET} install || exit 1
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+}
+
+function libpng() {
+  prepare libpng-${LIBPNG_VER} BUILD
+
+  msg 'Configuring libpng'
+  SDK_PREFIX=${crossDir} \
+    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake -D CMAKE_INSTALL_PREFIX=/ \
+	  -D CMAKE_BUILD_TYPE=Release .. || exit 1
+
+  msg 'Compiling libpng'
+  make -j4 || exit
+
+  msg 'Installing libpng'
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+}
+
+function jpeglib() {
+  ln -s jpegsrc.v${JPEGLIB_VER}.tar.gz src/jpeg-${JPEGLIB_VER}.tar.gz
+  prepare jpeg-${JPEGLIB_VER} BUILD
+
+  msg 'Configuring jpeglib'
+  ../configure --host=${TARGET} --prefix=/ --disable-static || exit 1
+
+  msg 'Compiling jpeglib'
+  make -j4 || exit 1
+
+  msg 'Installing jpeglib'
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+}
+
+function freetype() {
+  prepare freetype-${FREETYPE_VER} BUILD
+
+  msg 'Configuring freetype'
+  ../configure --host=${TARGET} --prefix=/ --disable-static --without-bzip2 \
+	       --without-png --without-harfbuzz || exit 1
+
+  msg 'Compiling freetype'
+  make -j4 || exit 1
+
+  msg 'Installing freetype'
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+}
+
+function sdl() {
+  prepare SDL2-${SDL_VER} BUILD
+
+  msg 'Configuring SDL'
+  SDK_PREFIX=${crossDir} \
+    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake -D CMAKE_INSTALL_PREFIX=/ \
+	  -D CMAKE_BUILD_TYPE=Release -D DISKAUDIO=OFF -D PULSEAUDIO=OFF -D VIDEO_WAYLAND=OFF \
+	  .. || exit 1
+
+  msg 'Compiling SDL'
+  make -j4 || exit 1
+
+  msg 'Installing SDL'
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+}
+
+function sdl_image() {
+  prepare SDL2_image-${SDL_IMAGE_VER} BUILD
+
+  msg 'Configuring SDL_image'
+  ../configure --host=${TARGET} --prefix=/ --disable-webp --disable-static || exit 1
+
+  msg 'Compiling SDL_image'
+  make -j4 || exit 1
+
+  msg 'Installing SDL_image'
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+}
+
+function sdl_ttf() {
+  prepare SDL2_ttf-${SDL_TTF_VER} BUILD
+
+  sed -i '/noinst_PROGRAMS = showfont$(EXEEXT) glfont$(EXEEXT)/ d' ../Makefile.in
+
+  msg 'Configuring SDL_ttf'
+  ../configure --host=${TARGET} --prefix=/ --without-x --disable-static || exit 1
+
+  msg 'Compiling SDL_ttf'
+  make -j4 || exit 1
+
+  msg 'Installing SDL_ttf'
+  make install DESTDIR=${crossDir}/${TARGET} || exit 1
 }
 
 case ${1} in
@@ -174,6 +266,24 @@ case ${1} in
   libressl)
     libressl
     ;;
+  libpng)
+    libpng
+    ;;
+  jpeglib)
+    jpeglib
+    ;;
+  freetype)
+    freetype
+    ;;
+  sdl)
+    sdl
+    ;;
+  sdl_image)
+    sdl_image
+    ;;
+  sdl_ttf)
+    sdl_ttf
+    ;;
   all)
     rm -rf ${crossDir}
     kernelHeaders
@@ -184,6 +294,8 @@ case ${1} in
     libgcc
     zlib
     libressl
+    directfb
+    sdl
     trim
     ;;
 esac
