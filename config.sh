@@ -1,7 +1,7 @@
 TARGET='arm-linux-musleabi'
 CPU_FLAGS='--with-cpu=arm926ej-s --with-float=soft'
 
-LINUX_VER='4.7.2'
+LINUX_VER='4.7.3'
 BINUTILS_VER='2.27'
 ISL_VER='0.17.1'
 GCC_VER='6.2.0'
@@ -17,4 +17,5 @@ SDL_TTF_VER='2.0.14'
 
 BUSYBOX_VER='1.24.2'
 OPENSSH_VER='7.3p1'
-MONO_VER='4.4.2.11'
+MONO_VER='4.4.2'
+MONO_VER_FULL='4.4.2.11'

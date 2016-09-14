@@ -12,7 +12,7 @@ chmod 4755 usr/bin/busybox
 tar cf ${imagesDir}/rootfs.tar *
 EOF
 
-dd if=/dev/zero of=${imagesDir}/rootfs.img bs=1M count=64
+dd if=/dev/zero of=${imagesDir}/rootfs.img bs=1M count=256
 mkfs.ext3 -L root ${imagesDir}/rootfs.img
 sudo mount -o loop ${imagesDir}/rootfs.img /mnt/temp
 sudo tar xf ${imagesDir}/rootfs.tar -C /mnt/temp

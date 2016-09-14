@@ -33,14 +33,17 @@ function trim() {
 }
 
 function kernelHeaders() {
-  prepare linux-${LINUX_VER} BUILD-cross
+  prepare linux-${LINUX_VER} linux-${LINUX_VER} BUILD-cross
 
   msg 'Installing kernel headers'
   cd .. && make ARCH=arm INSTALL_HDR_PATH=${crossDir}/${TARGET} headers_install
+
+  # Duplicated in musl.
+  echo '' > ${crossDir}/${TARGET}/include/asm/sigcontext.h
 }
 
 function binutils() {
-  prepare binutils-${BINUTILS_VER} BUILD-cross
+  prepare binutils-${BINUTILS_VER} binutils-${BINUTILS_VER} BUILD-cross
 
   msg 'Configuring toolchain binutils'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
@@ -55,8 +58,8 @@ function binutils() {
 }
 
 function gcc() {
-  prepare isl-${ISL_VER} BUILD-cross
-  prepare gcc-${GCC_VER} BUILD-cross
+  prepare isl-${ISL_VER} isl-${ISL_VER} BUILD-cross
+  prepare gcc-${GCC_VER} gcc-${GCC_VER} BUILD-cross
 
   # Link isl into GCC source-tree, to simplfy configure command-line.
   ln -sf ${buildDir}/isl-${ISL_VER} ../isl
@@ -78,7 +81,7 @@ function gcc() {
 # dependency issue by first compiling a limited libgcc (static only, without supports for threads).
 # That bootstrap libgcc suffices to build our libc and after that the fully-functional libgcc.
 function libgcc1() {
-  prepare gcc-${GCC_VER} BUILD-cross-libgcc1
+  prepare gcc-${GCC_VER} gcc-${GCC_VER} BUILD-cross-libgcc1
 
   msg 'Configuring toolchain bootstrap libgcc'
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
@@ -93,7 +96,7 @@ function libgcc1() {
 }
 
 function musl() {
-  prepare musl-${MUSL_VER} BUILD-cross
+  prepare musl-${MUSL_VER} musl-${MUSL_VER} BUILD-cross
 
   msg 'Configuring toolchain musl'
   CROSS_COMPILE=${crossPrefix} \
@@ -107,7 +110,7 @@ function musl() {
 }
 
 function libgcc() {
-  prepare gcc-${GCC_VER} BUILD-cross
+  prepare gcc-${GCC_VER} gcc-${GCC_VER} BUILD-cross
 
   msg 'Compiling toolchain libgcc & libstdc++'
   make -j4 all-target-libgcc all-target-libstdc++-v3 || exit 1
@@ -119,7 +122,7 @@ function libgcc() {
 }
 
 function zlib() {
-  prepare zlib-${ZLIB_VER}
+  prepare zlib-${ZLIB_VER} zlib-${ZLIB_VER}
 
   msg 'Configuring zlib'
   CC=${crossPrefix}gcc \
@@ -133,67 +136,68 @@ function zlib() {
 }
 
 function libressl() {
-  prepare libressl-${LIBRESSL_VER} BUILD
+  prepare libressl-${LIBRESSL_VER} libressl-${LIBRESSL_VER} BUILD
 
   msg 'Configuring libressl'
-  ../configure --host=${TARGET} --prefix=/ --disable-static || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static || exit 1
 
   msg 'Compiling libressl'
   make -j4 || exit 1
 
   msg 'Installing libressl'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 function libpng() {
-  prepare libpng-${LIBPNG_VER} BUILD
+  prepare libpng-${LIBPNG_VER} libpng-${LIBPNG_VER} BUILD
 
   msg 'Configuring libpng'
   SDK_PREFIX=${crossDir} \
-    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake -D CMAKE_INSTALL_PREFIX=/ \
+    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake \
+	  -D CMAKE_INSTALL_PREFIX=${crossDir}/${TARGET} \
 	  -D CMAKE_BUILD_TYPE=Release .. || exit 1
 
   msg 'Compiling libpng'
   make -j4 || exit
 
   msg 'Installing libpng'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 function jpeglib() {
-  ln -s jpegsrc.v${JPEGLIB_VER}.tar.gz src/jpeg-${JPEGLIB_VER}.tar.gz
-  prepare jpeg-${JPEGLIB_VER} BUILD
+  prepare jpegsrc.v${JPEGLIB_VER} jpeg-${JPEGLIB_VER} BUILD
 
   msg 'Configuring jpeglib'
-  ../configure --host=${TARGET} --prefix=/ --disable-static || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static || exit 1
 
   msg 'Compiling jpeglib'
   make -j4 || exit 1
 
   msg 'Installing jpeglib'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 function freetype() {
-  prepare freetype-${FREETYPE_VER} BUILD
+  prepare freetype-${FREETYPE_VER} freetype-${FREETYPE_VER} BUILD
 
   msg 'Configuring freetype'
-  ../configure --host=${TARGET} --prefix=/ --disable-static --without-bzip2 \
-	       --without-png --without-harfbuzz || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static \
+	       --without-bzip2 --without-png --without-harfbuzz || exit 1
 
   msg 'Compiling freetype'
   make -j4 || exit 1
 
   msg 'Installing freetype'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 function sdl() {
-  prepare SDL2-${SDL_VER} BUILD
+  prepare SDL2-${SDL_VER} SDL2-${SDL_VER} BUILD
 
   msg 'Configuring SDL'
   SDK_PREFIX=${crossDir} \
-    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake -D CMAKE_INSTALL_PREFIX=/ \
+    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake \
+	  -D CMAKE_INSTALL_PREFIX=${crossDir}/${TARGET} \
 	  -D CMAKE_BUILD_TYPE=Release -D DISKAUDIO=OFF -D PULSEAUDIO=OFF -D VIDEO_WAYLAND=OFF \
 	  .. || exit 1
 
@@ -201,35 +205,38 @@ function sdl() {
   make -j4 || exit 1
 
   msg 'Installing SDL'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 function sdl_image() {
-  prepare SDL2_image-${SDL_IMAGE_VER} BUILD
+  prepare SDL2_image-${SDL_IMAGE_VER} SDL2_image-${SDL_IMAGE_VER} BUILD
 
   msg 'Configuring SDL_image'
-  ../configure --host=${TARGET} --prefix=/ --disable-webp --disable-static || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-webp --disable-static \
+	       --with-sdl-prefix=${crossDir}/${TARGET} || exit 1
 
   msg 'Compiling SDL_image'
   make -j4 || exit 1
 
   msg 'Installing SDL_image'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 function sdl_ttf() {
-  prepare SDL2_ttf-${SDL_TTF_VER} BUILD
+  prepare SDL2_ttf-${SDL_TTF_VER} SDL2_ttf-${SDL_TTF_VER} BUILD
 
   sed -i '/noinst_PROGRAMS = showfont$(EXEEXT) glfont$(EXEEXT)/ d' ../Makefile.in
 
   msg 'Configuring SDL_ttf'
-  ../configure --host=${TARGET} --prefix=/ --without-x --disable-static || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --without-x --disable-static \
+	       --with-sdl-prefix=${crossDir}/${TARGET} \
+	       --with-freetype-prefix=${crossDir}/${TARGET} || exit 1
 
   msg 'Compiling SDL_ttf'
   make -j4 || exit 1
 
   msg 'Installing SDL_ttf'
-  make install DESTDIR=${crossDir}/${TARGET} || exit 1
+  make install || exit 1
 }
 
 case ${1} in
@@ -294,8 +301,12 @@ case ${1} in
     libgcc
     zlib
     libressl
-    directfb
+    libpng
+    jpeglib
+    freetype
     sdl
+    sdl_image
+    sdl_ttf
     trim
     ;;
 esac

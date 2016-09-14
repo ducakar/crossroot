@@ -12,7 +12,10 @@ function fetch() {
 function trim() {
   msg 'Removing includes, locales, manual ...'
   rm -rf ${targetDir}/usr/include
-  rm -rf ${targetDir}/usr/share/{man,info,locale}
+  rm -rf ${targetDir}/usr/lib/*.a
+  rm -rf ${targetDir}/usr/lib/*.la
+  rm -rf ${targetDir}/usr/lib/pkgconfig
+  rm -rf ${targetDir}/usr/share
 
   msg 'Stripping target binaries'
   ${crossPrefix}strip ${targetDir}/usr/bin/*
@@ -25,13 +28,14 @@ function filesystem() {
 
 function musl() {
   msg 'Copying musl from toolchain'
-  install -m 755 ${crossDir}/${TARGET}/lib/libc.so ${targetDir}/usr/lib/libc.so
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libc.so ${targetDir}/usr/lib
   ln -s libc.so ${targetDir}/usr/lib/ld-musl-arm.so.1
 }
 
 function libgcc() {
   msg 'Copying libgcc from toolchain'
-  install -m 755 ${crossDir}/${TARGET}/lib/libgcc_s.so.1 ${targetDir}/usr/lib/libgcc_s.so.1
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libgcc_s.so.1 ${targetDir}/usr/lib
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libstdc++.so.6 ${targetDir}/usr/lib
 }
 
 function zlib() {
@@ -46,7 +50,7 @@ function libressl() {
 }
 
 function busybox() {
-  prepare busybox-${BUSYBOX_VER} BUILD
+  prepare busybox-${BUSYBOX_VER} busybox-${BUSYBOX_VER} BUILD
 
   cd .. && cp ${rootDir}/etc/busybox-config .config
 
@@ -66,7 +70,7 @@ function busybox() {
 }
 
 function openssh() {
-  prepare openssh-${OPENSSH_VER} BUILD
+  prepare openssh-${OPENSSH_VER} openssh-${OPENSSH_VER} BUILD
 
   msg 'Configuring openssh'
   # It calls "strip" instead of "${TARGET}-strip". Anyway, we strip all binaries aftwrwards.
@@ -78,6 +82,21 @@ function openssh() {
 
   msg 'Installing openssh'
   make install-nokeys DESTDIR=${targetDir} || exit 1
+}
+
+function mono() {
+  prepare mono-${MONO_VER_FULL} mono-${MONO_VER} BUILD
+
+  msg 'Configuring mono'
+  ../configure --host=${TARGET} --prefix=/usr --disable-nls --disable-boehm --without-x \
+	       --disable-mcs-build --with-mcs-docs=no --enable-system-aot \
+	       --enable-minimal=profiler || exit 1
+
+  msg 'Compiling mono'
+  make -j4 || exit 1
+
+  msg 'Installing mono'
+  make install DESTDIR=${targetDir} || exit 1
 }
 
 case ${1} in
@@ -111,6 +130,9 @@ case ${1} in
   openssh)
     openssh
     ;;
+  mono)
+    mono
+    ;;
   all)
     rm -rf ${targetDir}
     filesystem
@@ -120,6 +142,7 @@ case ${1} in
     libressl
     busybox
     openssh
+    mono
     trim
     ;;
 esac

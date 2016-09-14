@@ -8,6 +8,9 @@ crossPrefix=${crossDir}/bin/${TARGET}-
 targetDir=${rootDir}/target
 imagesDir=${rootDir}/images
 
+export PKG_CONFIG_PATH=${crossDir}/${TARGET}/lib/pkgconfig
+export PKG_CONFIG_LIBDIR=${crossDir}/${TARGET}/lib
+
 function msg() {
   echo -e "\e[1;32m=== ${@} ===\e[0m"
 }
@@ -36,7 +39,7 @@ function clean() {
 
 # Unpack source to build directory and go to build/<package>/<buildSubdir>.
 function prepare() {
-  name=${1}
+  name=${2}
   package=${srcDir}/${1}*
 
   if [[ -d ${buildDir}/${name} ]]; then
@@ -49,7 +52,7 @@ function prepare() {
   fi
 
   # Create the build directory and go to it.
-  mkdir -p ${buildDir}/${name}/${2} && cd ${buildDir}/${name}/${2}
+  mkdir -p ${buildDir}/${name}/${3} && cd ${buildDir}/${name}/${3}
 }
 
 sanityCheck
