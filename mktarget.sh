@@ -5,7 +5,7 @@ function fetch() {
   msg 'Fetching'
   fetchPkg "https://busybox.net/downloads/busybox-${BUSYBOX_VER}.tar.bz2"
   fetchPkg "http://www.obsd.si/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VER}.tar.gz"
-  fetchPkg "http://download.mono-project.com/sources/mono/mono-${MONO_VER}.tar.bz2"
+  fetchPkg "http://download.mono-project.com/sources/mono/mono-${MONO_VER_FULL}.tar.bz2"
   msg 'Fetched everything'
 }
 
@@ -40,19 +40,34 @@ function libgcc() {
 
 function zlib() {
   msg 'Copying zlib from toolchain'
-  install -m 755 ${crossDir}/${TARGET}/lib/libz.so.1 ${targetDir}/usr/lib/libz.so.1
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libz.so.1 ${targetDir}/usr/lib
 }
 
 function libressl() {
   msg 'Copying libressl from toolchain'
-  install -m 755 ${crossDir}/${TARGET}/lib/libcrypto.so.38 ${targetDir}/usr/lib/libcrypto.so.38
-  install -m 755 ${crossDir}/${TARGET}/lib/libssl.so.39 ${targetDir}/usr/lib/libssl.so.39
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libcrypto.so.38 ${targetDir}/usr/lib
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libssl.so.39 ${targetDir}/usr/lib
+}
+
+function libpng() {
+  msg 'Copying libpng from toolchain'
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libpng16.so.16 ${targetDir}/usr/lib
+}
+
+function jpeglib() {
+  msg 'Copying jpeglib from toolchain'
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libjpeg.so.9 ${targetDir}/usr/lib
+}
+
+function freetype() {
+  msg 'Copying freetype from toolchain'
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libfreetype.so.6 ${targetDir}/usr/lib
 }
 
 function busybox() {
   prepare busybox-${BUSYBOX_VER} busybox-${BUSYBOX_VER} BUILD
 
-  cd .. && cp ${rootDir}/etc/busybox-config .config
+  cd .. && cp ${rootDir}/etc/busybox-config.$TARGET .config
 
   msg 'Compiling busybox'
   make -j4 || exit 1
@@ -97,6 +112,8 @@ function mono() {
 
   msg 'Installing mono'
   make install DESTDIR=${targetDir} || exit 1
+
+  cp -r /usr/lib/mono/{4.5,gac} ${targetDir}/usr/lib/mono
 }
 
 case ${1} in
@@ -124,6 +141,15 @@ case ${1} in
   libressl)
     libressl
     ;;
+  libpng)
+    libpng
+    ;;
+  jpeglib)
+    jpeglib
+    ;;
+  freetype)
+    freetype
+    ;;
   busybox)
     busybox
     ;;
@@ -140,6 +166,9 @@ case ${1} in
     libgcc
     zlib
     libressl
+    libpng
+    jpeglib
+    freetype
     busybox
     openssh
     mono

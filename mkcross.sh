@@ -13,9 +13,9 @@ function fetch() {
   fetchPkg "http://downloads.sourceforge.net/sourceforge/libpng/libpng-${LIBPNG_VER}.tar.xz"
   fetchPkg "http://www.ijg.org/files/jpegsrc.v${JPEGLIB_VER}.tar.gz"
   fetchPkg "http://download.savannah.gnu.org/releases/freetype//freetype-${FREETYPE_VER}.tar.bz2"
-  fetchPkg "https://www.libsdl.org/release/SDL2-${SDL_VER}.tar.gz"
-  fetchPkg "https://www.libsdl.org/projects/SDL_image/release/SDL2_image-${SDL_IMAGE_VER}.tar.gz"
-  fetchPkg "https://www.libsdl.org/projects/SDL_ttf/release/SDL2_ttf-${SDL_TTF_VER}.tar.gz"
+  fetchPkg "https://www.libsdl.org/release/SDL-${SDL_VER}.tar.gz"
+  fetchPkg "https://www.libsdl.org/projects/SDL_image/release/SDL_image-${SDL_IMAGE_VER}.tar.gz"
+  fetchPkg "https://www.libsdl.org/projects/SDL_ttf/release/SDL_ttf-${SDL_TTF_VER}.tar.gz"
   msg 'Fetched everything'
 }
 
@@ -40,6 +40,11 @@ function kernelHeaders() {
 
   # Duplicated in musl.
   echo '' > ${crossDir}/${TARGET}/include/asm/sigcontext.h
+
+  if [[ $TARGET == aarch64-* ]]; then
+    mkdir -p ${crossDir}/${TARGET}/lib
+    ln -s lib64 ${crossDir}/${TARGET}/lib
+  fi
 }
 
 function binutils() {
@@ -49,6 +54,21 @@ function binutils() {
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
 		 --disable-werror || exit 1
+
+  msg 'Compiling toolchain binutils'
+  make -j4 || exit 1
+
+  msg 'Installing toolchain binutils'
+  make install || exit 1
+}
+
+function binutils_win() {
+  prepare binutils-${BINUTILS_VER} binutils-${BINUTILS_VER} BUILD-cross-win
+
+  msg 'Configuring toolchain binutils'
+  CPP='/usr/bin/cpp' \
+    ../configure --host=x86_64-w64-mingw32 --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
+                 --disable-werror || exit 1
 
   msg 'Compiling toolchain binutils'
   make -j4 || exit 1
@@ -68,6 +88,25 @@ function gcc() {
   CC='ccache gcc' CXX='ccache g++' CPP='/usr/bin/cpp' \
     ../configure --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
 		 --enable-languages=c,c++ ${CPU_FLAGS} --disable-static || exit 1
+
+  msg 'Compiling toolchain GCC'
+  make -j4 all-gcc || exit 1
+
+  msg 'Installing toolchain GCC'
+  make install-strip-gcc || exit 1
+}
+
+function gcc_win() {
+  prepare isl-${ISL_VER} isl-${ISL_VER} BUILD-cross-win
+  prepare gcc-${GCC_VER} gcc-${GCC_VER} BUILD-cross-win
+
+  # Link isl into GCC source-tree, to simplfy configure command-line.
+  ln -sf ${buildDir}/isl-${ISL_VER} ../isl
+
+  msg 'Configuring toolchain GCC'
+  CPP='/usr/bin/cpp' \
+    ../configure --host=x86_64-w64-mingw32 --target=${TARGET} --prefix=${crossDir} --disable-nls --disable-multilib \
+                 --enable-languages=c,c++ ${CPU_FLAGS} --disable-static || exit 1
 
   msg 'Compiling toolchain GCC'
   make -j4 all-gcc || exit 1
@@ -152,10 +191,7 @@ function libpng() {
   prepare libpng-${LIBPNG_VER} libpng-${LIBPNG_VER} BUILD
 
   msg 'Configuring libpng'
-  SDK_PREFIX=${crossDir} \
-    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake \
-	  -D CMAKE_INSTALL_PREFIX=${crossDir}/${TARGET} \
-	  -D CMAKE_BUILD_TYPE=Release .. || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-static || exit 1
 
   msg 'Compiling libpng'
   make -j4 || exit
@@ -192,14 +228,18 @@ function freetype() {
 }
 
 function sdl() {
-  prepare SDL2-${SDL_VER} SDL2-${SDL_VER} BUILD
+  prepare SDL-${SDL_VER} SDL-${SDL_VER} BUILD
+
+  cd ..
+  sed -i 's/arm-\*/arm-* | aarch64-*/' build-scripts/config.sub
+  sed -i 's/-eabi/-*musl/' build-scripts/config.sub
+  sed -i 's/\*-\*-linux/*-linux/' configure.in
+  ./autogen.sh
+  cd BUILD
 
   msg 'Configuring SDL'
-  SDK_PREFIX=${crossDir} \
-    cmake -D CMAKE_TOOLCHAIN_FILE=../../../etc/Toolchain.cmake \
-	  -D CMAKE_INSTALL_PREFIX=${crossDir}/${TARGET} \
-	  -D CMAKE_BUILD_TYPE=Release -D DISKAUDIO=OFF -D PULSEAUDIO=OFF -D VIDEO_WAYLAND=OFF \
-	  .. || exit 1
+  ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --enable-shared --disable-static \
+	       --without-x --disable-pulseaudio --disable-joystick || exit 1
 
   msg 'Compiling SDL'
   make -j4 || exit 1
@@ -209,7 +249,12 @@ function sdl() {
 }
 
 function sdl_image() {
-  prepare SDL2_image-${SDL_IMAGE_VER} SDL2_image-${SDL_IMAGE_VER} BUILD
+  prepare SDL_image-${SDL_IMAGE_VER} SDL_image-${SDL_IMAGE_VER} BUILD
+
+  cd ..
+  sed -i 's/arm-\*/arm-* | aarch64-*/' config.sub
+  sed -i 's/-eabi/-musl*/' config.sub
+  cd BUILD
 
   msg 'Configuring SDL_image'
   ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-webp --disable-static \
@@ -223,9 +268,13 @@ function sdl_image() {
 }
 
 function sdl_ttf() {
-  prepare SDL2_ttf-${SDL_TTF_VER} SDL2_ttf-${SDL_TTF_VER} BUILD
+  prepare SDL_ttf-${SDL_TTF_VER} SDL_ttf-${SDL_TTF_VER} BUILD
 
-  sed -i '/noinst_PROGRAMS = showfont$(EXEEXT) glfont$(EXEEXT)/ d' ../Makefile.in
+  cd ..
+  sed -i 's/arm-\*/arm-* | aarch64-*/' config.sub
+  sed -i 's/-eabi/-musl*/' config.sub
+  sed -i '/noinst_PROGRAMS = showfont$(EXEEXT) glfont$(EXEEXT)/ d' Makefile.in
+  cd BUILD
 
   msg 'Configuring SDL_ttf'
   ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --without-x --disable-static \
@@ -255,8 +304,14 @@ case ${1} in
   binutils)
     binutils
     ;;
+  binutils_win)
+    binutils_win
+    ;;
   gcc)
     gcc
+    ;;
+  gcc_win)
+    gcc_win
     ;;
   libgcc1)
     libgcc1
