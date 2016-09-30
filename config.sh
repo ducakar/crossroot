@@ -1,8 +1,13 @@
-#TARGET='aarch64-linux-musl'
-TARGET='arm-linux-musleabi'
-#TARGET='armhf-linux-musleabi'
+# Versatile/PB & Mini 2451
+TARGET='arm-none-linux-musleabi'
 CPU_FLAGS='--with-cpu=arm926ej-s --with-float=soft'
+
+# Wega
+#TARGET='arm-none-linux-musleabi'
 #CPU_FLAGS='--with-cpu=cortex-a8 --with-fpu=neon --with-float=hard'
+
+# AArch64
+#TARGET='aarch64-none-linux-musl'
 
 LINUX_VER='4.4.21'
 BINUTILS_VER='2.27'

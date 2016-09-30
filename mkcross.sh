@@ -230,12 +230,7 @@ function freetype() {
 function sdl() {
   prepare SDL-${SDL_VER} SDL-${SDL_VER} BUILD
 
-  cd ..
-  sed -i 's/arm-\*/arm-* | aarch64-*/' build-scripts/config.sub
-  sed -i 's/-eabi/-*musl/' build-scripts/config.sub
-  sed -i 's/\*-\*-linux/*-linux/' configure.in
-  ./autogen.sh
-  cd BUILD
+  echo 'echo $1' > ../build-scripts/config.sub
 
   msg 'Configuring SDL'
   ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --enable-shared --disable-static \
@@ -251,10 +246,7 @@ function sdl() {
 function sdl_image() {
   prepare SDL_image-${SDL_IMAGE_VER} SDL_image-${SDL_IMAGE_VER} BUILD
 
-  cd ..
-  sed -i 's/arm-\*/arm-* | aarch64-*/' config.sub
-  sed -i 's/-eabi/-musl*/' config.sub
-  cd BUILD
+  echo 'echo $1' > ../config.sub
 
   msg 'Configuring SDL_image'
   ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --disable-webp --disable-static \
@@ -270,11 +262,8 @@ function sdl_image() {
 function sdl_ttf() {
   prepare SDL_ttf-${SDL_TTF_VER} SDL_ttf-${SDL_TTF_VER} BUILD
 
-  cd ..
-  sed -i 's/arm-\*/arm-* | aarch64-*/' config.sub
-  sed -i 's/-eabi/-musl*/' config.sub
-  sed -i '/noinst_PROGRAMS = showfont$(EXEEXT) glfont$(EXEEXT)/ d' Makefile.in
-  cd BUILD
+  sed -i '/noinst_PROGRAMS = showfont$(EXEEXT) glfont$(EXEEXT)/ d' ../Makefile.in
+  echo 'echo $1' > ../config.sub
 
   msg 'Configuring SDL_ttf'
   ../configure --host=${TARGET} --prefix=${crossDir}/${TARGET} --without-x --disable-static \

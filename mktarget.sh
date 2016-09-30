@@ -29,18 +29,21 @@ function filesystem() {
 function musl() {
   msg 'Copying musl from toolchain'
   install -Dm 755 ${crossDir}/${TARGET}/lib/libc.so ${targetDir}/usr/lib
-  ln -s libc.so ${targetDir}/usr/lib/ld-musl-arm.so.1
+  ln -sf libc.so ${targetDir}/usr/lib/ld-musl-${TARGET/-none-linux-*}.so.1
+  ln -sf libc.so ${targetDir}/usr/lib/libm.so
 }
 
 function libgcc() {
   msg 'Copying libgcc from toolchain'
   install -Dm 755 ${crossDir}/${TARGET}/lib/libgcc_s.so.1 ${targetDir}/usr/lib
   install -Dm 755 ${crossDir}/${TARGET}/lib/libstdc++.so.6 ${targetDir}/usr/lib
+  ln -sf libstdc++.so.6 ${targetDir}/usr/lib/libstdc++.so
 }
 
 function zlib() {
   msg 'Copying zlib from toolchain'
   install -Dm 755 ${crossDir}/${TARGET}/lib/libz.so.1 ${targetDir}/usr/lib
+  ln -sf libz.so.1 ${targetDir}/usr/lib/libz.so
 }
 
 function libressl() {
@@ -67,7 +70,9 @@ function freetype() {
 function busybox() {
   prepare busybox-${BUSYBOX_VER} busybox-${BUSYBOX_VER} BUILD
 
-  cd .. && cp ${rootDir}/etc/busybox-config.$TARGET .config
+  cd ..
+  cp ${rootDir}/etc/busybox-config .config
+  sed "s/^CONFIG_CROSS_COMPILER_PREFIX=.*/CONFIG_CROSS_COMPILER_PREFIX=\"${TARGET}-\"/" -i .config
 
   msg 'Compiling busybox'
   make -j4 || exit 1
@@ -171,7 +176,6 @@ case ${1} in
     freetype
     busybox
     openssh
-    mono
     trim
     ;;
 esac
