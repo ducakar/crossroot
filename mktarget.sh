@@ -5,7 +5,7 @@ function fetch() {
   msg 'Fetching'
   fetchPkg "https://busybox.net/downloads/busybox-${BUSYBOX_VER}.tar.bz2"
   fetchPkg "http://www.obsd.si/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VER}.tar.gz"
-  fetchPkg "http://download.mono-project.com/sources/mono/mono-${MONO_VER_FULL}.tar.bz2"
+  fetchPkg "http://download.mono-project.com/sources/mono/mono-${MONO_VER}.tar.bz2"
   msg 'Fetched everything'
 }
 
@@ -105,7 +105,7 @@ function openssh() {
 }
 
 function mono() {
-  prepare mono-${MONO_VER_FULL} mono-${MONO_VER} BUILD
+  prepare mono-${MONO_VER} mono-${MONO_VER} BUILD
 
   msg 'Configuring mono'
   ../configure --host=${TARGET} --prefix=/usr --disable-nls --disable-boehm --without-x \
