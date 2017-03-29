@@ -1,0 +1,23 @@
+# Maintainer: Davorin Učakar <davorin.ucakar@gmail.com>
+
+_target=arm-linux-musleabi
+
+pkgname=$_target-binutils
+pkgver=2.27
+pkgrel=1
+arch=(i686 x86_64)
+license=(GPL3)
+description=""
+
+function build() {
+  mkdir build && cd build
+
+  ../$pkgname-$pkgver/configure --target=$_target --prefix=/usr --disable-multilib --disable-werror
+  make
+}
+
+function package() {
+  cd build
+
+  make install DESTDIR=$pkgdir
+}
