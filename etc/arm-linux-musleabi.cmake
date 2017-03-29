@@ -1,4 +1,4 @@
-set(PLATFORM_TRIPLET            "arm-linux-musleabi")
+set(PLATFORM_TRIPLET            "arm-none-linux-musleabi")
 set(PLATFORM_PREFIX             "$ENV{SDK_PREFIX}")
 
 set(CMAKE_SYSTEM_NAME           "Linux" CACHE STRING "Target system.")

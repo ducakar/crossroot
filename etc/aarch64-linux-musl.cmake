@@ -1,4 +1,4 @@
-set(PLATFORM_TRIPLET            "aarch64-linux-musl")
+set(PLATFORM_TRIPLET            "aarch64-none-linux-musl")
 set(PLATFORM_PREFIX             "$ENV{SDK_PREFIX}")
 
 set(CMAKE_SYSTEM_NAME           "Linux" CACHE STRING "Target system.")

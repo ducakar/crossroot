@@ -6,7 +6,7 @@ function fetch() {
   fetchPkg "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-${LINUX_VER}.tar.xz"
   fetchPkg "http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VER}.tar.bz2"
   fetchPkg "http://isl.gforge.inria.fr/isl-${ISL_VER}.tar.xz"
-  fetchPkg "ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
+  fetchPkg "ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.bz2"
   fetchPkg "http://www.musl-libc.org/releases/musl-${MUSL_VER}.tar.gz"
   fetchPkg "http://zlib.net/zlib-${ZLIB_VER}.tar.xz"
   fetchPkg "http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VER}.tar.gz"
