@@ -9,7 +9,7 @@ CPU_FLAGS='--with-cpu=arm926ej-s --with-float=soft'
 # AArch64
 #TARGET='aarch64-none-linux-musl'
 
-LINUX_VER='4.9.18'
+LINUX_VER='4.4.57'
 BINUTILS_VER='2.28'
 ISL_VER='0.18'
 GCC_VER='6.3.0'
@@ -26,3 +26,4 @@ SDL_TTF_VER='2.0.11'
 BUSYBOX_VER='1.26.2'
 OPENSSH_VER='7.5p1'
 MONO_VER='4.8.0.524'
+MONO_DIR_VER='4.8.0'

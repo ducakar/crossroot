@@ -48,8 +48,8 @@ function zlib() {
 
 function libressl() {
   msg 'Copying libressl from toolchain'
-  install -Dm 755 ${crossDir}/${TARGET}/lib/libcrypto.so.38 ${targetDir}/usr/lib
-  install -Dm 755 ${crossDir}/${TARGET}/lib/libssl.so.39 ${targetDir}/usr/lib
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libcrypto.so.41 ${targetDir}/usr/lib
+  install -Dm 755 ${crossDir}/${TARGET}/lib/libssl.so.43 ${targetDir}/usr/lib
 }
 
 function libpng() {
@@ -105,7 +105,7 @@ function openssh() {
 }
 
 function mono() {
-  prepare mono-${MONO_VER} mono-${MONO_VER} BUILD
+  prepare mono-${MONO_VER} mono-${MONO_DIR_VER} BUILD
 
   msg 'Configuring mono'
   ../configure --host=${TARGET} --prefix=/usr --disable-nls --disable-boehm --without-x \
