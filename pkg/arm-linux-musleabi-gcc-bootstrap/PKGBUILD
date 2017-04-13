@@ -1,0 +1,53 @@
+# Maintainer: Davorin Učakar <davorin.ucakar@gmail.com>
+
+_target=arm-linux-musleabi
+_cpuflags='--with-cpu=arm926ej-s --with-float=soft'
+
+pkgname=$_target-gcc-bootstrap
+pkgver=6.2.0
+_islver=0.17.1
+pkgrel=1
+pkgdesc="The initial GCC used to compile c library for the $_target target"
+url='http://gcc.gnu.org'
+arch=(i686 x86_64)
+license=(GPL3)
+depends=(bash libmpc $_target-binutils)
+conflicts=($_target-gcc)
+source=(ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-$pkgver/gcc-$pkgver.tar.bz2
+	http://isl.gforge.inria.fr/isl-$_islver.tar.bz2)
+md5sums=(c9616fd448f980259c31de613e575719
+	 8428efbbc6f6e2810ce5c1ba73ecf98c)
+
+prepare() {
+  ln -sf isl-$_islver gcc-$pkgver/isl
+}
+
+build() {
+  cd build
+
+  export -n CPPFLAGS
+  export CFLAGS='-O0' CXXFLAGS='-O0'
+
+  ../gcc-$pkgver/configure \
+    --target=$_target \
+    --enable-languages=c \
+    --prefix=/usr \
+    --libexecdir=/usr/lib \
+    --disable-nls \
+    --disable-multilib \
+    --disable-libssp \
+    --disable-shared \
+    --disable-threads \
+    ${_cpuflags}
+
+  make
+}
+
+package() {
+  cd build
+
+  make install-strip- DESTDIR="$pkgdir"
+
+  rm -rf "$pkgdir"/usr/{include,share}
+  rm -rf "$pkgdir"/usr/lib/gcc/$_target/$pkgver/include-fixed
+}

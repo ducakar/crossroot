@@ -5,19 +5,34 @@ _target=arm-linux-musleabi
 pkgname=$_target-binutils
 pkgver=2.27
 pkgrel=1
+pkgdesc="A set of programs to assemble and manipulate binary and object files for the $_target target"
+url='http://www.gnu.org/software/binutils/'
 arch=(i686 x86_64)
 license=(GPL3)
-description=""
+depends=(glibc)
+source=(ftp://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.bz2)
+md5sums=(64146a0faa3b411ba774f47d41de239f)
 
-function build() {
-  mkdir build && cd build
+prepare() {
+  sed -i '/ac_cpp=/s/$CPPFLAGS/$CPPFLAGS -O2/' binutils-$pkgver/libiberty/configure
+}
 
-  ../$pkgname-$pkgver/configure --target=$_target --prefix=/usr --disable-multilib --disable-werror
+build() {
+  mkdir -p build && cd build
+
+  ../binutils-$pkgver/configure \
+    --target=$_target \
+    --prefix=/usr \
+    --disable-nls \
+    --disable-multilib
+
   make
 }
 
-function package() {
+package() {
   cd build
 
-  make install DESTDIR=$pkgdir
+  make install-strip DESTDIR="$pkgdir"
+
+  rm -rf "$pkgdir"/usr/share
 }

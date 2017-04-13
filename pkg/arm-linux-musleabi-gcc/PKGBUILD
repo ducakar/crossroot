@@ -1,0 +1,49 @@
+# Maintainer: Davorin Učakar <davorin.ucakar@gmail.com>
+
+_target=arm-linux-musleabi
+_cpuflags='--with-cpu=arm926ej-s --with-float=soft'
+
+pkgname=$_target-gcc
+pkgver=6.2.0
+_islver=0.17.1
+pkgrel=1
+pkgdesc="The GNU Compiler Collection - C and C++ frontends for the $_target target"
+url='http://gcc.gnu.org'
+arch=(i686 x86_64)
+license=(GPL3)
+depends=(bash libmpc $_target-binutils $_target-musl)
+source=(ftp://gd.tuwien.ac.at/gnu/gcc/releases/gcc-$pkgver/gcc-$pkgver.tar.bz2
+	http://isl.gforge.inria.fr/isl-$_islver.tar.xz)
+md5sums=(c9616fd448f980259c31de613e575719
+	 8428efbbc6f6e2810ce5c1ba73ecf98c)
+
+prepare() {
+  ln -s isl-$_islver gcc-$pkgver/isl
+}
+
+build() {
+  mkdir -p build && cd build
+
+  ../gcc-$pkgver/configure \
+    --target=$_target \
+    --enable-languages=c,c++ \
+    --prefix=/usr \
+    --libexecdir=/usr/lib \
+    --disable-nls \
+    --disable-multilib \
+    --disable-libssp \
+    --disable-static \
+    $_cpuflags
+
+  make
+}
+
+package() {
+  cd build
+
+  make install-strip DESTDIR="$pkgdir"
+
+  rm -rf "$pkgdir"/usr/{include,share}
+  rm -rf "$pkgdir"/usr/lib/gcc/$_target/$pkgver/include-fixed
+  $_target-strip "$pkgdir"/usr/$_target/lib/libgcc_s.so.1
+}

@@ -1,0 +1,39 @@
+# Maintainer: Davorin Učakar <davorin.ucakar@gmail.com>
+
+_target=arm-linux-musleabi
+_gccver=6.2.0
+
+pkgname=$_target-musl
+pkgver=1.1.15
+pkgrel=1
+pkgdesc="Lightweight implementation of C standard library for the $_target target"
+url='http://www.musl-libc.org/'
+arch=(i686 x86_64)
+license=(MIT)
+makedepends=($_target-gcc-stage1)
+source=(http://www.musl-libc.org/releases/musl-$pkgver.tar.gz)
+md5sums=(d529ce4a2f7f79d8c3fd4b8329417b57)
+
+build() {
+  cd build
+
+  export -n CPPFLAGS CFLAGS CXXFLAGS
+  export CROSS_COMPILE=$_target- LIBCC=/usr/lib/gcc/$_target/$_gccver/libgcc.a
+
+  ../musl-$pkgver/configure \
+    --target=$_target \
+    --prefix=/usr/$_target \
+    --disable-static
+
+  make
+}
+
+package() {
+  cd build
+
+  make install DESTDIR="$pkgdir"
+
+  rm -rf "$pkgdir"/lib
+  $_target-strip "$pkgdir"/usr/$_target/lib/libc.so
+  install -D ../COPYRIGHT "$pkgdir"/usr/share/licenses/$pkgname/COPYRIGHT
+}
