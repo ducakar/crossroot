@@ -1,4 +1,4 @@
-MUSL_VER       := 1.1.23
+MUSL_VER       := 1.2.0
 MUSL_URL       := "https://www.musl-libc.org/releases/musl-$(MUSL_VER).tar.gz"
 MUSL_ARCHIVE   := download/musl-$(MUSL_VER).tar.gz
 MUSL_SRC_DIR   := src/musl-$(MUSL_VER)

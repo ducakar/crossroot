@@ -1,4 +1,4 @@
-LINUX_VER       := 5.3.1
+LINUX_VER       := 5.4.42
 LINUX_URL       := "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-$(LINUX_VER).tar.xz"
 LINUX_ARCHIVE   := download/linux-$(LINUX_VER).tar.xz
 LINUX_SRC_DIR   := src/linux-$(LINUX_VER)

@@ -1,24 +1,22 @@
-GCC_VER        := 9.2.0
-GCC_URL        := "ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.xz"
-GCC_ARCHIVE    := download/gcc-$(GCC_VER).tar.xz
-GCC_SRC_DIR    := src/gcc-$(GCC_VER)
-GCC_BUILD_DIR  := build/gcc-$(GCC_VER)
-GCC_BUILD1_DIR := build/gcc1-$(GCC_VER)
-GCC_CONF       := --target=arm-linux-musleabihf --prefix=$(TOOLCHAIN_DIR) \
-                  --with-system-zlib --disable-nls --disable-multilib \
-                  --with-sysroot=$(TOOLCHAIN_DIR)/$(TOOLCHAIN_TARGET) \
-                  --with-build-sysroot=$(TOOLCHAIN_DIR)/$(TOOLCHAIN_TARGET) \
-                  --with-cpu=generic-armv7-a --with-fpu=neon --with-float=hard \
-                  --with-linker-hash=gnu --enable-languages=c,c++ \
-                  --disable-static
-GCC_CONF1      := --target=arm-linux-musleabihf --prefix=$(TOOLCHAIN_DIR) \
-                  --with-system-zlib --disable-nls --disable-multilib \
-                  --with-build-sysroot=$(TOOLCHAIN_DIR)/$(TOOLCHAIN_TARGET) \
-                  --with-linker-hash=gnu --enable-languages=c \
-                  --with-cpu=generic-armv7-a --with-fpu=neon --with-float=hard \
-                  --disable-shared --disable-threads
+GCC_VER           := 10.1.0
+GCC_URL           := "ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-${GCC_VER}/gcc-${GCC_VER}.tar.xz"
+GCC_ARCHIVE       := download/gcc-$(GCC_VER).tar.xz
+GCC_SRC_DIR       := src/gcc-$(GCC_VER)
+GCC_BUILD_DIR     := build/gcc-$(GCC_VER)
+LIBGCC0_BUILD_DIR := build/libgcc0-$(GCC_VER)
+LIBGCC_BUILD_DIR  := build/libgcc-$(GCC_VER)
+GCC_CONF          := --target=$(TOOLCHAIN_TARGET) --prefix=$(TOOLCHAIN_DIR) \
+                     --with-sysroot=$(TOOLCHAIN_DIR)/$(TOOLCHAIN_TARGET) \
+                     --with-build-sysroot=$(TOOLCHAIN_DIR)/$(TOOLCHAIN_TARGET) \
+                     --disable-nls --disable-multilib --with-system-zlib \
+                     --with-linker-hash=gnu --enable-languages=c \
+                     --disable-static $(GCC_CONF_EXTRA)
+LIBGCC0_CONF      := --target=$(TOOLCHAIN_TARGET) --prefix=$(TOOLCHAIN_DIR) \
+                     --disable-nls --disable-multilib --with-system-zlib \
+                     --with-linker-hash=gnu --enable-languages=c \
+                     --disable-shared --disable-threads $(GCC_CONF_EXTRA)
 
-GMP_VER        := 6.1.2
+GMP_VER        := 6.2.0
 GMP_URL        := "https://ftp.gnu.org/gnu/gmp/gmp-$(GMP_VER).tar.xz"
 GMP_ARCHIVE    := download/gmp-$(GMP_VER).tar.xz
 GMP_SRC_DIR    := src/gmp-$(GMP_VER)
@@ -33,48 +31,49 @@ MPC_URL        := "https://ftp.gnu.org/gnu/mpc/mpc-$(MPC_VER).tar.gz"
 MPC_ARCHIVE    := download/mpc-$(MPC_VER).tar.gz
 MPC_SRC_DIR    := src/mpc-$(MPC_VER)
 
-ISL_VER        := 0.21
+ISL_VER        := 0.22
 ISL_URL        := "http://isl.gforge.inria.fr/isl-$(ISL_VER).tar.xz"
 ISL_ARCHIVE    := download/isl-$(ISL_VER).tar.xz
 ISL_SRC_DIR    := src/isl-$(ISL_VER)
 
 gcc-clean:
 	rm -rf $(GCC_BUILD_DIR)
-	rm -rf $(GCC_BUILD1_DIR)
+
+libgcc0-clean:
+	rm -rf $(LIBGCC0_BUILD_DIR)
+
+libgcc-clean:
+	rm -rf $(LIBGCC_BUILD_DIR)
 
 gcc-download: $(GCC_ARCHIVE) $(GMP_ARCHIVE) $(MPFR_ARCHIVE) $(ISL_ARCHIVE)
 
 gcc-src: $(GCC_SRC_DIR)
 
-gcc-build-gcc: $(GCC_BUILD_DIR)
+gcc-build: $(GCC_BUILD_DIR)
 
-gcc-install-gcc: $(GCC_BUILD_DIR)
+gcc-install: $(GCC_BUILD_DIR)
 	$(call log,installing gcc)
 	cd $(GCC_BUILD_DIR) && make install-strip-gcc
+	# rm -rf ${TOOLCHAIN_DIR}/lib/gcc/${TOOLCHAIN_TARGET}/${GCC_VER}/include-fixed
 
-gcc-build-libgcc1: $(GCC_BUILD1_DIR)
+libgcc0-build: $(LIBGCC0_BUILD_DIR)
 
-gcc-install-libgcc1: $(GCC_BUILD1_DIR)
+libgcc0-install: $(LIBGCC0_BUILD_DIR)
 	$(call log,installing bootstrap libgcc)
-	cd $(GCC_BUILD1_DIR) && make install-strip-target-libgcc
+	cd $(LIBGCC0_BUILD_DIR) && make install-strip-target-libgcc
 
-gcc-build-libgcc: $(GCC_BUILD_DIR)
+libgcc-build: $(GCC_BUILD_DIR)
+
+libgcc-install: $(GCC_BUILD_DIR)
 	$(call log,building libgcc)
 	cd $(GCC_BUILD_DIR) && make -j8 all-target-libgcc
-
-gcc-install-libgcc: gcc-build-libgcc
 	$(call log,installing libgcc)
 	cd $(GCC_BUILD_DIR) && make install-strip-target-libgcc
-	rm -rf ${TOOLCHAIN_DIR}/lib/gcc/${TOOLCHAIN_TARGET}/${GCC_VER}/include-fixed
 
-gcc-build-libstdc++: $(GCC_BUILD_DIR)
-	$(call log,building libstdc++)
-	cd $(GCC_BUILD_DIR) && make -j8 all-target-libstdc++-v3
-
-gcc-install-libstdc++: gcc-build-libstdc++
+libstdc++-install: $(GCC_BUILD_DIR)
 	$(call log,installing libstdc++)
+	cd $(GCC_BUILD_DIR) && make -j8 all-target-libstdc++-v3
 	cd $(GCC_BUILD_DIR) && make install-strip-target-libstdc++-v3
-	rm -rf ${TOOLCHAIN_DIR}/lib/gcc/${TOOLCHAIN_TARGET}/${GCC_VER}/include-fixed
 
 $(GCC_ARCHIVE):
 	$(call log,downloading gcc)
@@ -142,8 +141,8 @@ $(GCC_BUILD_DIR): $(GCC_SRC_DIR)
 	cd $(GCC_BUILD_DIR) && ../../$(GCC_SRC_DIR)/configure $(GCC_CONF)
 	cd $(GCC_BUILD_DIR) && make -j8 all-gcc
 
-$(GCC_BUILD1_DIR): $(GCC_SRC_DIR)
+$(LIBGCC0_BUILD_DIR): $(GCC_SRC_DIR)
 	$(call log,building bootstrap libgcc)
-	mkdir -p $(GCC_BUILD1_DIR)
-	cd $(GCC_BUILD1_DIR) && ../../$(GCC_SRC_DIR)/configure $(GCC_CONF1)
-	cd $(GCC_BUILD1_DIR) && make -j8 all-target-libgcc
+	mkdir -p $(LIBGCC0_BUILD_DIR)
+	cd $(LIBGCC0_BUILD_DIR) && ../../$(GCC_SRC_DIR)/configure $(LIBGCC0_CONF)
+	cd $(LIBGCC0_BUILD_DIR) && make -j8 all-target-libgcc
